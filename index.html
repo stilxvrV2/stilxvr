@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StilxVR - Music & Projects</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cyan: #00e5ff;
+      --blue: #3b82f6;
+      --purple: #a855f7;
+      --text-light: #ffffff;
+      --text-muted: #e0e0e0;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --card-hover: rgba(255, 255, 255, 0.12);
+      --shadow-glow: rgba(255,255,255,0.15);
+      --beat-duration: 0.6s;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    body { background: linear-gradient(135deg, var(--cyan), var(--blue), var(--purple)); color: var(--text-light); min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-start; overflow-x: hidden; }
+
+    a { color: #fff176; text-decoration: none; transition: all 0.3s ease; }
+    a:hover { color: #ffe082; text-shadow: 0 0 8px #fff176; }
+
+    header {
+      padding: 3rem 1rem;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      border-radius: 0 0 24px 24px;
+      transition: all 1s ease;
+      margin-top: 60px;
+    }
+    header.move-up { transform: translateY(0); margin-top: 40px; }
+
+    header h1 { font-weight: 800; font-size: 3.5rem; letter-spacing: 0.1em; text-shadow: 0 6px 12px rgba(0,0,0,0.5); }
+
+    main { padding: 3rem 1rem; max-width: 1000px; margin: auto; flex-grow: 1; opacity: 0; transition: opacity 1s ease; }
+    main.show { opacity: 1; }
+
+    section { margin-bottom: 3rem; padding: 2rem; border-radius: 20px; background: var(--card-bg); backdrop-filter: blur(12px); box-shadow: 0 12px 30px rgba(0,0,0,0.4); transition: all 0.4s ease; }
+    section:hover { background: var(--card-hover); transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 30px var(--shadow-glow); }
+
+    h2 { color: #fff; font-weight: 600; margin-bottom: 1rem; font-size: 2rem; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 0.25rem; }
+    p { color: var(--text-muted); font-weight: 300; font-size: 1.05rem; line-height: 1.8; max-width: 700px; }
+
+    .music-embed iframe { width: 100%; max-width: 600px; height: 360px; border-radius: 24px; border: none; box-shadow: 0 12px 30px rgba(0,0,0,0.5); transition: all 0.4s ease; }
+    .music-embed iframe:hover { box-shadow: 0 16px 40px rgba(255, 255, 255, 0.3), 0 0 20px var(--shadow-glow); transform: translateY(-3px); }
+
+    ul.projects-list { list-style: none; padding: 0; max-width: 700px; margin: auto; }
+    ul.projects-list li { background: rgba(255,255,255,0.05); margin-bottom: 1.25rem; padding: 1.25rem 2rem; border-radius: 18px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); transition: all 0.4s ease; font-weight: 500; font-size: 1.1rem; }
+    ul.projects-list li:hover { background: rgba(255,255,255,0.1); box-shadow: 0 12px 30px rgba(0,0,0,0.5), 0 0 20px var(--shadow-glow); transform: translateY(-4px); }
+
+    footer { padding: 2rem 1rem; text-align: center; font-size: 0.95rem; color: var(--text-muted); background: rgba(0,0,0,0.25); border-top: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(8px); border-radius: 24px 24px 0 0; }
+
+    @keyframes sway { 0% { transform: translateX(0) rotate(0deg); } 25% { transform: translateX(-6px) rotate(-6deg); } 50% { transform: translateX(0) rotate(0deg); } 75% { transform: translateX(6px) rotate(6deg); } 100% { transform: translateX(0) rotate(0deg); } }
+    .dancing-letter { display: inline-block; will-change: transform; animation-name: sway; animation-duration: var(--beat-duration); animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-play-state: paused; transform-origin: center bottom; }
+    .is-playing .dancing-letter { animation-play-state: running; }
+    .paused span { animation: none !important; transform: rotate(0) translateX(0) !important; }
+
+    .volume-control { margin: 1.5rem auto; width: 250px; text-align: center; }
+    .volume-control input[type=range] { width: 100%; -webkit-appearance: none; height: 6px; background: rgba(255,255,255,0.3); border-radius: 6px; outline: none; }
+    .volume-control input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 6px rgba(0,0,0,0.3); }
+
+    /* Welcome Overlay */
+    .welcome-overlay {
+      position: fixed;
+      top:0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 1s ease;
+    }
+    .welcome-overlay.fade-out { opacity: 0; pointer-events: none; }
+
+    .welcome-overlay h1 { font-size: 4rem; margin-bottom: 2rem; color: #fff; }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .welcome-overlay button {
+      font-size: 1.5rem;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      border: none;
+      background: #fff176;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    .welcome-overlay button:hover {
+      background: #ffe082;
+      box-shadow: 0 0 20px #fff176;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Welcome Overlay -->
+  <div class="welcome-overlay" id="welcome-overlay">
+    <h1>Welcome</h1>
+    <button id="learn-btn">Learn about me!</button>
+  </div>
+
+  <!-- Background Music -->
+  <audio id="bg-music" loop preload="auto">
+    <source src="music.wav" type="audio/wav">
+  </audio>
+
+  <!-- Hover Sound -->
+  <audio id="hover-sound" preload="auto">
+    <source src="hoversound.wav" type="audio/wav">
+  </audio>
+
+  <header>
+    <h1 class="dancing">StilxVR</h1>
+  </header>
+
+  <main>
+    <section id="about">
+      <h2 class="dancing">About Me</h2>
+      <p class="dancing">Hi! I'm StilxVR, a music creator blending electronic vibes with futuristic sounds. Formerly known as McFrostyGT. I make gaming websites, code, and produce music. Thanks for stopping by!</p>
+    </section>
+
+    <section id="music">
+      <h2 class="dancing">Listen to My Music</h2>
+      <div class="music-embed">
+        <iframe src="https://open.spotify.com/embed/artist/7midBeQoCWETbhzvEoUhk4?utm_source=generator" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      </div>
+    </section>
+
+    <section id="projects">
+      <h2 class="dancing">Other Projects</h2>
+      <ul class="projects-list dancing">
+        <li><a href="https://v9o9-prime.github.io" target="_blank" rel="noopener noreferrer" class="dancing">V9o9-prime</a></li>
+        <li><a href="https://example2.com" target="_blank" rel="noopener noreferrer" class="dancing">Project Two</a></li>
+        <li><a href="https://example3.com" target="_blank" rel="noopener noreferrer" class="dancing">Project Three</a></li>
+      </ul>
+    </section>
+
+    <div class="volume-control">
+      <label for="volume">Volume</label>
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 StilxVR | <a href="mailto:contact@stilxvr.com">contact@stilxvr.com</a> | 
+    <a href="https://twitter.com/stilxvr" target="_blank" rel="noopener noreferrer">Twitter</a> | 
+    <a href="https://instagram.com/stilxvr" target="_blank" rel="noopener noreferrer">Instagram</a></p>
+  </footer>
+
+  <script>
+    (function(){
+      const audio = document.getElementById('bg-music');
+      const hoverSound = document.getElementById('hover-sound');
+      const volumeSlider = document.getElementById('volume');
+      const dancingElements = document.querySelectorAll('.dancing');
+      const main = document.querySelector('main');
+      const header = document.querySelector('header');
+      const welcomeOverlay = document.getElementById('welcome-overlay');
+      const learnBtn = document.getElementById('learn-btn');
+
+      // Dancing letters
+      const BPM = 100;
+      const beatDuration = 60 / BPM;
+      document.documentElement.style.setProperty('--beat-duration', beatDuration + 's');
+
+      function wrapTextNodesInside(root){
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        const textNodes = [];
+        while(walker.nextNode()) textNodes.push(walker.currentNode);
+        for(const node of textNodes){
+          if(!node.nodeValue) continue;
+          const parentEl = node.parentElement;
+          if(!parentEl) continue;
+          if(parentEl.closest('footer')) continue;
+          if(['SCRIPT','STYLE'].includes(parentEl.tagName)) continue;
+
+          const frag = document.createDocumentFragment();
+          for(const ch of node.nodeValue){
+            const span = document.createElement('span');
+            span.className = 'dancing-letter';
+            span.innerHTML = (ch.trim() === '' ? '&nbsp;' : ch);
+            frag.appendChild(span);
+          }
+          node.parentNode.replaceChild(frag,node);
+        }
+      }
+      document.querySelectorAll('.dancing').forEach(el => wrapTextNodesInside(el));
+
+      function setPlaying(on){
+        if(on) document.documentElement.classList.add('is-playing');
+        else document.documentElement.classList.remove('is-playing');
+      }
+      audio.addEventListener('play',()=>setPlaying(true));
+      audio.addEventListener('pause',()=>setPlaying(false));
+      audio.addEventListener('ended',()=>setPlaying(false));
+
+      // Volume control
+      volumeSlider.addEventListener('input',()=> {
+        audio.volume = volumeSlider.value;
+        if(volumeSlider.value=="0") dancingElements.forEach(el=>el.classList.add('paused'));
+        else dancingElements.forEach(el=>el.classList.remove('paused'));
+      });
+      audio.volume = volumeSlider.value;
+
+      // Welcome button click
+      learnBtn.addEventListener('click', ()=> {
+        welcomeOverlay.classList.add('fade-out');
+        setTimeout(()=>{
+          welcomeOverlay.style.display = 'none';
+          header.classList.add('move-up');
+          main.classList.add('show');
+          audio.play().catch(()=>{});
+        }, 1000);
+      });
+
+      // Hover sound on links and buttons
+      document.querySelectorAll('a, button').forEach(el=>{
+        el.addEventListener('mouseenter', ()=>{
+          hoverSound.currentTime = 0;
+          hoverSound.play().catch(()=>{});
+        });
+      });
+
+    })();
+  </script>
+</body>
+</html>
