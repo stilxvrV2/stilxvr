@@ -66,7 +66,6 @@
     .volume-control input[type=range] { width: 100%; -webkit-appearance: none; height: 6px; background: rgba(255,255,255,0.3); border-radius: 6px; outline: none; }
     .volume-control input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 0 6px rgba(0,0,0,0.3); }
 
-    /* Welcome Overlay */
     .welcome-overlay {
       position: fixed;
       top:0; left:0; right:0; bottom:0;
@@ -106,19 +105,17 @@
 </head>
 <body>
 
-  <!-- Welcome Overlay -->
   <div class="welcome-overlay" id="welcome-overlay">
     <h1>Welcome</h1>
     <button id="learn-btn">Learn about me!</button>
   </div>
 
-  <!-- Background Music -->
-  <audio id="bg-music" loop preload="auto">
+  <!-- Audio setup -->
+  <audio id="bg-music" loop preload="auto" playsinline muted>
     <source src="music.wav" type="audio/wav">
   </audio>
 
-  <!-- Hover Sound -->
-  <audio id="hover-sound" preload="auto">
+  <audio id="hover-sound" preload="auto" playsinline>
     <source src="hoversound.wav" type="audio/wav">
   </audio>
 
@@ -155,8 +152,8 @@
   </main>
 
   <footer>
-    <p>© 2025 StilxVR | <a href="mailto:contact@stilxvr.com">contact@stilxvr.com</a> | 
-    <a href="https://twitter.com/stilxvr" target="_blank" rel="noopener noreferrer">Twitter</a> | 
+    <p>© 2025 StilxVR | <a href="mailto:contact@stilxvr.com">contact@stilxvr.com</a> |
+    <a href="https://twitter.com/stilxvr" target="_blank" rel="noopener noreferrer">Twitter</a> |
     <a href="https://instagram.com/stilxvr" target="_blank" rel="noopener noreferrer">Instagram</a></p>
   </footer>
 
@@ -171,7 +168,10 @@
       const welcomeOverlay = document.getElementById('welcome-overlay');
       const learnBtn = document.getElementById('learn-btn');
 
-      // Dancing letters
+      // Safari playback policy: start muted
+      audio.muted = true;
+      audio.playsInline = true;
+
       const BPM = 100;
       const beatDuration = 60 / BPM;
       document.documentElement.style.setProperty('--beat-duration', beatDuration + 's');
@@ -203,6 +203,7 @@
         if(on) document.documentElement.classList.add('is-playing');
         else document.documentElement.classList.remove('is-playing');
       }
+
       audio.addEventListener('play',()=>setPlaying(true));
       audio.addEventListener('pause',()=>setPlaying(false));
       audio.addEventListener('ended',()=>setPlaying(false));
@@ -213,27 +214,41 @@
         if(volumeSlider.value=="0") dancingElements.forEach(el=>el.classList.add('paused'));
         else dancingElements.forEach(el=>el.classList.remove('paused'));
       });
-      audio.volume = volumeSlider.value;
 
-      // Welcome button click
-      learnBtn.addEventListener('click', ()=> {
+      // Fix: volume must be set after playback begins (iOS)
+      audio.addEventListener('play',()=>{
+        setTimeout(()=>{ audio.volume = volumeSlider.value; }, 200);
+      });
+
+      // Start music on button click
+      learnBtn.addEventListener('click', async ()=> {
         welcomeOverlay.classList.add('fade-out');
-        setTimeout(()=>{
+        setTimeout(async ()=>{
           welcomeOverlay.style.display = 'none';
           header.classList.add('move-up');
           main.classList.add('show');
-          audio.play().catch(()=>{});
+          try {
+            audio.muted = false;
+            await audio.play();
+            // Safari AudioContext fix
+            if (typeof window.AudioContext !== "undefined" || typeof window.webkitAudioContext !== "undefined") {
+              const ctx = new (window.AudioContext || window.webkitAudioContext)();
+              if (ctx.state === 'suspended') await ctx.resume();
+            }
+            audio.volume = volumeSlider.value;
+          } catch(err) {
+            console.warn("Playback prevented:", err);
+          }
         }, 1000);
       });
 
-      // Hover sound on links and buttons
+      // Hover sound fix for iOS
       document.querySelectorAll('a, button').forEach(el=>{
         el.addEventListener('mouseenter', ()=>{
           hoverSound.currentTime = 0;
           hoverSound.play().catch(()=>{});
         });
       });
-
     })();
   </script>
 </body>
