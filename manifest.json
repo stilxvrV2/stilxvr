@@ -1,10 +1,13 @@
 {
   "name": "StilxVR",
   "short_name": "StilxVR",
+  "description": "Music, coding, and futuristic projects by StilxVR.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
