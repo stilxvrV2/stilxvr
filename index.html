@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>StilxVR - Music and Projects</title>
 
-  <!-- PWA Settings -->
+  <!-- PWA / App-Like Settings -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,6 +23,17 @@
       --text-muted: #e0e0e0;
       --card-bg: rgba(255, 255, 255, 0.05);
       --card-hover: rgba(255, 255, 255, 0.12);
+      --beat-duration: 0.6s;
+    }
+
+    @keyframes dance {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .dancing-letter {
+      display: inline-block;
+      animation: dance var(--beat-duration) ease-in-out infinite;
     }
 
     body {
@@ -118,27 +129,9 @@
       border-radius: 24px 24px 0 0;
     }
 
-    .volume-control, .mute-control {
+    .mute-control {
       margin: 1.5rem auto;
       text-align: center;
-    }
-
-    input[type=range] {
-      width: 250px;
-      -webkit-appearance: none;
-      height: 6px;
-      background: rgba(255,255,255,0.3);
-      border-radius: 6px;
-      outline: none;
-    }
-
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #fff;
-      cursor: pointer;
     }
 
     .mute-btn {
@@ -185,12 +178,16 @@
       0%,100% { transform: scale(1); }
       50% { transform: scale(1.05); }
     }
+
+    .paused .dancing-letter {
+      animation-play-state: paused;
+    }
   </style>
 </head>
 
 <body>
   <div class="welcome-overlay" id="welcome-overlay">
-    <h1>Welcome</h1>
+    <h1 class="dancing">Welcome</h1>
     <button id="learn-btn">Learn about me!</button>
   </div>
 
@@ -198,36 +195,35 @@
     <source src="music.wav" type="audio/wav">
   </audio>
 
+  <audio id="hover-sound" preload="auto">
+    <source src="hoversound.wav" type="audio/wav">
+  </audio>
+
   <header>
-    <h1>StilxVR</h1>
+    <h1 class="dancing">StilxVR</h1>
   </header>
 
   <main>
-    <section>
+    <section class="dancing">
       <h2>About Me</h2>
       <p>Hi! I'm StilxVR, a music creator blending electronic vibes with futuristic sounds. I also code and make interactive web experiences. 🚀</p>
     </section>
 
     <section>
-      <h2>Other Projects</h2>
-      <ul class="projects-list">
+      <h2 class="dancing">Other Projects</h2>
+      <ul class="projects-list dancing">
         <li><a href="https://v9o9-prime.github.io" target="_blank">V9o9-prime</a></li>
         <li><a href="https://example2.com" target="_blank">Project Two</a></li>
         <li><a href="https://example3.com" target="_blank">Project Three</a></li>
       </ul>
     </section>
 
-    <div class="volume-control" id="volume-control">
-      <label>Volume</label><br>
-      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
-    </div>
-
-    <div class="mute-control" id="mute-control" style="display:none;">
+    <div class="mute-control">
       <button id="mute-btn" class="mute-btn">Mute</button>
     </div>
   </main>
 
-  <footer>
+  <footer class="dancing">
     <p>© 2025 StilxVR | 
       <a href="mailto:contact@stilxvr.com">contact@stilxvr.com</a> | 
       <a href="https://twitter.com/stilxvr" target="_blank">Twitter</a> | 
@@ -240,26 +236,17 @@
       const audio = document.getElementById('bg-music');
       const learnBtn = document.getElementById('learn-btn');
       const welcomeOverlay = document.getElementById('welcome-overlay');
-      const volumeSlider = document.getElementById('volume');
       const muteBtn = document.getElementById('mute-btn');
-      const muteControl = document.getElementById('mute-control');
-      const volumeControl = document.getElementById('volume-control');
-
-      // Detect mobile or Safari browsers
-      const ua = navigator.userAgent || navigator.vendor || window.opera;
-      const isIOS = /iPad|iPhone|iPod/.test(ua);
-      const isAndroid = /android/i.test(ua);
-      const isMobile = /Mobile|Tablet|Android|iP(ad|hone)/i.test(ua);
-      const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
-
-      if (isMobile || isSafari) {
-        volumeControl.style.display = 'none';
-        muteControl.style.display = 'block';
-      }
+      const hoverSound = document.getElementById('hover-sound');
+      const dancingElements = document.querySelectorAll('.dancing');
 
       let isMuted = false;
-      muteBtn.addEventListener('click', ()=>{
+
+      // Mute button
+      muteBtn.addEventListener('click', () => {
         isMuted = !isMuted;
+        document.body.classList.toggle('paused', isMuted);
+
         if (isMuted) {
           audio.pause();
           muteBtn.textContent = "Unmute";
@@ -271,13 +258,10 @@
         }
       });
 
-      volumeSlider.addEventListener('input', ()=>{
-        audio.volume = volumeSlider.value;
-      });
-
-      learnBtn.addEventListener('click', async ()=>{
+      // Welcome button click
+      learnBtn.addEventListener('click', async () => {
         welcomeOverlay.classList.add('fade-out');
-        setTimeout(async ()=>{
+        setTimeout(async () => {
           welcomeOverlay.style.display = 'none';
           try {
             audio.muted = false;
@@ -286,6 +270,36 @@
         }, 1000);
       });
 
+      // Dancing text setup
+      function wrapTextNodesInside(root){
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        const textNodes = [];
+        while(walker.nextNode()) textNodes.push(walker.currentNode);
+        for(const node of textNodes){
+          if(!node.nodeValue.trim()) continue;
+          const frag = document.createDocumentFragment();
+          for(const ch of node.nodeValue){
+            const span = document.createElement('span');
+            span.className = 'dancing-letter';
+            span.innerHTML = (ch === ' ' ? '&nbsp;' : ch);
+            frag.appendChild(span);
+          }
+          node.parentNode.replaceChild(frag, node);
+        }
+      }
+      document.querySelectorAll('.dancing').forEach(el => wrapTextNodesInside(el));
+
+      // Hover sound only for buttons
+      document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+          if (!isMuted) {
+            hoverSound.currentTime = 0;
+            hoverSound.play().catch(()=>{});
+          }
+        });
+      });
+
+      // Register service worker (for PWA)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(console.error);
       }
