@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>StilxVR - Music and Projects</title>
 
-  <!-- PWA settings -->
+  <!-- PWA Settings -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -152,9 +152,9 @@
       transition: all 0.3s ease;
     }
 
-    .mute-btn:hover {
-      background: #ffe082;
-      box-shadow: 0 0 15px #fff176;
+    .mute-btn.active {
+      background: #888;
+      color: #fff;
     }
 
     .welcome-overlay {
@@ -217,13 +217,11 @@
       </ul>
     </section>
 
-    <!-- Desktop/Android volume -->
     <div class="volume-control" id="volume-control">
       <label>Volume</label><br>
       <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
     </div>
 
-    <!-- iOS only mute -->
     <div class="mute-control" id="mute-control" style="display:none;">
       <button id="mute-btn" class="mute-btn">Mute</button>
     </div>
@@ -247,9 +245,14 @@
       const muteControl = document.getElementById('mute-control');
       const volumeControl = document.getElementById('volume-control');
 
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      // Detect mobile or Safari browsers
+      const ua = navigator.userAgent || navigator.vendor || window.opera;
+      const isIOS = /iPad|iPhone|iPod/.test(ua);
+      const isAndroid = /android/i.test(ua);
+      const isMobile = /Mobile|Tablet|Android|iP(ad|hone)/i.test(ua);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
 
-      if (isIOS) {
+      if (isMobile || isSafari) {
         volumeControl.style.display = 'none';
         muteControl.style.display = 'block';
       }
@@ -260,9 +263,11 @@
         if (isMuted) {
           audio.pause();
           muteBtn.textContent = "Unmute";
+          muteBtn.classList.add('active');
         } else {
           audio.play().catch(()=>{});
           muteBtn.textContent = "Mute";
+          muteBtn.classList.remove('active');
         }
       });
 
@@ -281,7 +286,6 @@
         }, 1000);
       });
 
-      // Register PWA
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(console.error);
       }
